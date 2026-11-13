@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Market Dash - 婆婆樂活健腦機</title>
-    <!-- 💡 引入輕量級 2D 物理引擎 Matter.js，負責處理水果掉落、碰撞與滾動 -->
-    <script src="https://cloudflare.com"></script>
 
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -385,13 +383,13 @@
         };
 
         const FRUIT_LEVELS = [
-            { level: 0, emoji: '🍒', radius: 30, score: 2 },
-            { level: 1, emoji: '🍓', radius: 45, score: 5 },
-            { level: 2, emoji: '🍇', radius: 65, score: 10 },
-            { level: 3, emoji: '🍊', radius: 85, score: 20 },
-            { level: 4, emoji: '🍎', radius: 110, score: 40 },
-            { level: 5, emoji: '🍈', radius: 140, score: 80 },
-            { level: 6, emoji: '🍉', radius: 180, score: 160 }
+            { level: 0, emoji: '🍒', radius: 20, score: 2 },
+            { level: 1, emoji: '🍓', radius: 30, score: 5 },
+            { level: 2, emoji: '🍇', radius: 43, score: 10 },
+            { level: 3, emoji: '🍊', radius: 56, score: 20 },
+            { level: 4, emoji: '🍎', radius: 73, score: 40 },
+            { level: 5, emoji: '🍈', radius: 93, score: 80 }, 
+            { level: 6, emoji: '🍉', radius: 120, score: 160 }
         ];
 
         let fruits = [];             // 存放箱子裡所有水果的陣列
@@ -439,66 +437,53 @@
 
         function initFruitPhysicsGame() {
             const container = document.getElementById('fruit-canvas-container');
-            container.innerHTML = ''; // 清空舊畫布
+            container.innerHTML = ''; 
+            // 微調箱子尺寸為 480x480，確保底部按鈕不會被螢幕裁切
+            container.style.width = '480px';
+            container.style.height = '480px';
             
-            // 建立純原生 HTML5 Canvas 畫布 (520 x 520)
             const canvas = document.createElement('canvas');
-            canvas.width = 520;
-            canvas.height = 520;
+            canvas.width = 480;
+            canvas.height = 480;
             container.appendChild(canvas);
             const ctx = canvas.getContext('2d');
 
             fruits = [];
             isFruitGameOver = false;
             canDropFruit = true;
-            currentDropX = 260;
+            currentDropX = 240;
             nextFruitLevel = Math.floor(Math.random() * 3);
 
             if (fruitAnimId) cancelAnimationFrame(fruitAnimId);
 
-            // 啟動 60FPS 物理與繪圖主迴圈
             function gameLoop() {
                 if (isFruitGameOver) return;
-                updateFruitPhysics(520, 520);
-                drawFruitCanvas(ctx, 520, 520);
+                updateFruitPhysics(480, 480);
+                drawFruitCanvas(ctx, 480, 480);
                 fruitAnimId = requestAnimationFrame(gameLoop);
             }
             gameLoop();
         }
 
-        // 純原生 2D 圓形重力、彈性碰撞與合成演算法
+        // 💡 升級版：高穩定度堆疊物理演算法（解決蹦蹦跳跳與互相擠壓）
         function updateFruitPhysics(width, height) {
-            const gravity = 0.55;
-            const friction = 0.92;
-            const bounce = 0.25;
+            const gravity = 0.45;
+            const airDamping = 0.97; // 提高空氣與滾動阻尼，讓水果更快停穩
 
-            // 1. 套用重力與邊界阻擋
+            // 1. 套用重力與阻尼
             for (let i = 0; i < fruits.length; i++) {
                 let f = fruits[i];
                 f.vy += gravity;
+                f.vx *= airDamping;
+                f.vy *= 0.98; // 垂直微阻尼，防止累積過大下壓力
+                
                 f.x += f.vx;
                 f.y += f.vy;
-                f.vx *= friction;
-
-                // 左右牆壁碰撞
-                if (f.x - f.radius < 0) {
-                    f.x = f.radius;
-                    f.vx = -f.vx * bounce;
-                } else if (f.x + f.radius > width) {
-                    f.x = width - f.radius;
-                    f.vx = -f.vx * bounce;
-                }
-
-                // 地板碰撞
-                if (f.y + f.radius > height) {
-                    f.y = height - f.radius;
-                    f.vy = -f.vy * bounce;
-                    if (Math.abs(f.vy) < 1) f.vy = 0;
-                }
             }
 
-            // 2. 水果之間的碰撞推擠與相同等級合成（多執行幾次讓堆疊更穩定）
-            for (let iter = 0; iter < 3; iter++) {
+            // 2. 增加物理迭代次數（8次），讓堆疊結構極度紮實不穿透
+            for (let iter = 0; iter < 8; iter++) {
+                // 2A. 先處理水果之間的碰撞與合成
                 for (let i = 0; i < fruits.length; i++) {
                     for (let j = i + 1; j < fruits.length; j++) {
                         let a = fruits[i];
@@ -510,8 +495,8 @@
                         let dist = Math.hypot(dx, dy);
                         let minDist = a.radius + b.radius;
 
-                        if (dist < minDist && dist > 0) {
-                            // 相同等級的水果碰在一起 ➡️ 合成升級！
+                        if (dist < minDist && dist > 0.001) {
+                            // 相同等級 ➡️ 合成升級
                             if (a.level === b.level && a.level < FRUIT_LEVELS.length - 1) {
                                 a.merged = true;
                                 b.merged = true;
@@ -524,33 +509,72 @@
                                 document.getElementById('fruit-score').innerText = score;
 
                                 spawnFruitBody(midX, midY, nextLvl);
-                            } else {
-                                // 不同等級 ➡️ 物理推開不重疊
-                                let overlap = (minDist - dist) / 2;
-                                let nx = dx / dist;
-                                let ny = dy / dist;
+                                continue;
+                            }
 
-                                a.x -= nx * overlap;
-                                a.y -= ny * overlap;
-                                b.x += nx * overlap;
-                                b.y += ny * overlap;
+                            // 不同等級 ➡️ 依質量（半徑平方）分配推開比例，大水果穩如泰山，小水果順勢滾開
+                            let massA = a.radius * a.radius;
+                            let massB = b.radius * b.radius;
+                            let totalMass = massA + massB;
+                            
+                            let ratioA = massB / totalMass; // A 越重，被推開的比例越小
+                            let ratioB = massA / totalMass;
 
-                                // 稍微傳遞水平滑動速度，讓水果會自然滾動
-                                a.vx -= nx * 0.4;
-                                b.vx += nx * 0.4;
+                            let overlap = minDist - dist;
+                            let nx = dx / dist;
+                            let ny = dy / dist;
+
+                            // 位置修正（分離重疊）
+                            a.x -= nx * overlap * ratioA;
+                            a.y -= ny * overlap * ratioA;
+                            b.x += nx * overlap * ratioB;
+                            b.y += ny * overlap * ratioB;
+
+                            // 💡 關鍵修復：消除垂直方向的無限向下擠壓速度（解決蹦蹦跳跳！）
+                            // 如果 A 在 B 的上方，且 A 正在往下壓，就抵消 A 的向下速度
+                            if (ny > 0.3 && a.vy > 0) {
+                                a.vy *= 0.5;
+                                a.vx += -nx * 0.55; // 給予自然的向兩側滑落滾動力
+                            } else if (ny < -0.3 && b.vy > 0) {
+                                b.vy *= 0.5;
+                                b.vx += nx * 0.55;
                             }
                         }
                     }
                 }
+
+                // 2B. 在每次迭代中同步強制執行牆壁與地板邊界鎖定（防止水果被擠出箱子外）
+                for (let i = 0; i < fruits.length; i++) {
+                    let f = fruits[i];
+                    if (f.x - f.radius < 0) {
+                        f.x = f.radius;
+                        if (f.vx < 0) f.vx = 0;
+                    } else if (f.x + f.radius > width) {
+                        f.x = width - f.radius;
+                        if (f.vx > 0) f.vx = 0;
+                    }
+
+                    if (f.y + f.radius > height) {
+                        f.y = height - f.radius;
+                        if (f.vy > 0) f.vy = 0;
+                        f.vx *= 0.95; // 接觸地板時增加摩擦力，防止無止盡滑動
+                    }
+                }
             }
 
-            // 過濾掉已經合成消失的舊水果
-            fruits = fruits.filter(f => !f.merged);
-
-            // 3. 檢查是否有靜止水果滿出頂部警戒紅線 (Y = 95)
+            // 3. 靜止休眠判定：速度極小時直接歸零，徹底消除細微抖動
             for (let i = 0; i < fruits.length; i++) {
                 let f = fruits[i];
-                if (f.hasSettled && (f.y - f.radius < 95) && Math.abs(f.vy) < 0.8) {
+                if (Math.abs(f.vx) < 0.08) f.vx = 0;
+                if (Math.abs(f.vy) < 0.08) f.vy = 0;
+            }
+
+            fruits = fruits.filter(f => !f.merged);
+
+            // 4. 檢查是否有靜止水果滿出頂部警戒紅線 (Y = 85)
+            for (let i = 0; i < fruits.length; i++) {
+                let f = fruits[i];
+                if (f.hasSettled && (f.y - f.radius < 85) && Math.abs(f.vy) < 0.2) {
                     isFruitGameOver = true;
                     setTimeout(exitScratchGame, 400);
                     break;
@@ -561,13 +585,13 @@
         function drawFruitCanvas(ctx, width, height) {
             ctx.clearRect(0, 0, width, height);
 
-            // 1. 畫頂部滿箱警戒紅線 (Y = 95)
+            // 1. 畫頂部滿箱警戒紅線 (Y = 85)
             ctx.beginPath();
-            ctx.moveTo(0, 95);
-            ctx.lineTo(width, 95);
+            ctx.moveTo(0, 85);
+            ctx.lineTo(width, 85);
             ctx.strokeStyle = 'rgba(244, 67, 54, 0.8)';
             ctx.lineWidth = 3;
-            ctx.setLineDash([10, 8]);
+            ctx.setLineDash([10, 10]);
             ctx.stroke();
             ctx.setLineDash([]);
 
@@ -576,23 +600,23 @@
                 const previewData = FRUIT_LEVELS[nextFruitLevel];
                 
                 ctx.beginPath();
-                ctx.moveTo(currentDropX, 45);
+                ctx.moveTo(currentDropX, 40);
                 ctx.lineTo(currentDropX, height);
                 ctx.strokeStyle = 'rgba(121, 85, 72, 0.35)';
                 ctx.lineWidth = 2;
                 ctx.stroke();
 
-                ctx.font = `${previewData.radius * 1.8}px Arial`;
+                ctx.font = `${previewData.radius * 2.15}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
-                ctx.fillText(previewData.emoji, currentDropX, 45);
+                ctx.fillText(previewData.emoji, currentDropX, 40);
             }
 
             // 3. 畫箱子裡所有掉落的水果
             for (let i = 0; i < fruits.length; i++) {
                 let f = fruits[i];
                 const fData = FRUIT_LEVELS[f.level];
-                ctx.font = `${fData.radius * 1.85}px Arial`;
+                ctx.font = `${fData.radius * 2.2}px Arial`;
                 ctx.textAlign = 'center';
                 ctx.textBaseline = 'middle';
                 ctx.fillText(fData.emoji, f.x, f.y);
@@ -604,7 +628,7 @@
             const newFruit = {
                 x: x,
                 y: y,
-                vx: (Math.random() - 0.5) * 1.5, // 給予極微小的隨機水平偏移，避免垂直疊成一座高塔不會滾動
+                vx: (Math.random() - 0.5) * 0.8, // 給予極微小的隨機水平偏移，避免垂直疊成一座高塔不會滾動
                 vy: 0,
                 radius: fData.radius,
                 level: level,
