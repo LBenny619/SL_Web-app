@@ -388,8 +388,8 @@
             { level: 2, emoji: '🍇', radius: 43, score: 10 },
             { level: 3, emoji: '🍊', radius: 56, score: 20 },
             { level: 4, emoji: '🍎', radius: 73, score: 40 },
-            { level: 5, emoji: '🍈', radius: 93, score: 80 }, 
-            { level: 6, emoji: '🍉', radius: 120, score: 160 }
+            { level: 5, emoji: '🍈', radius: 93, score: 60 }, 
+            { level: 6, emoji: '🍉', radius: 120, score: 80 }
         ];
 
         let fruits = [];             // 存放箱子裡所有水果的陣列
@@ -452,6 +452,8 @@
             isFruitGameOver = false;
             canDropFruit = true;
             currentDropX = 240;
+            // 💡 測試用：把原本的 Math.floor(Math.random() * 3) 暫時改成 6（直接掉大西瓜）
+            //nextFruitLevel = 6; 
             nextFruitLevel = Math.floor(Math.random() * 3);
 
             if (fruitAnimId) cancelAnimationFrame(fruitAnimId);
@@ -496,21 +498,34 @@
                         let minDist = a.radius + b.radius;
 
                         if (dist < minDist && dist > 0.001) {
-                            // 相同等級 ➡️ 合成升級
-                            if (a.level === b.level && a.level < FRUIT_LEVELS.length - 1) {
-                                a.merged = true;
-                                b.merged = true;
+                            // 相同等級的水果碰在一起
+                            if (a.level === b.level) {
+                                // 💡 新增邏輯：如果兩顆都是最高等級的大西瓜 (level 6)，相撞直接消除並加 100 分！
+                                if (a.level === FRUIT_LEVELS.length - 1) {
+                                    a.merged = true;
+                                    b.merged = true;
+                                    
+                                    score += 100; // 雙西瓜消除額外獎勵 100 分！
+                                    document.getElementById('fruit-score').innerText = score;
+                                    continue;
+                                } 
+                                // 其他等級則正常合成升級為大一級的水果
+                                else if (a.level < FRUIT_LEVELS.length - 1) {
+                                    a.merged = true;
+                                    b.merged = true;
 
-                                let nextLvl = a.level + 1;
-                                let midX = (a.x + b.x) / 2;
-                                let midY = (a.y + b.y) / 2;
+                                    let nextLvl = a.level + 1;
+                                    let midX = (a.x + b.x) / 2;
+                                    let midY = (a.y + b.y) / 2;
 
-                                score += FRUIT_LEVELS[nextLvl].score;
-                                document.getElementById('fruit-score').innerText = score;
+                                    score += FRUIT_LEVELS[nextLvl].score;
+                                    document.getElementById('fruit-score').innerText = score;
 
-                                spawnFruitBody(midX, midY, nextLvl);
-                                continue;
+                                    spawnFruitBody(midX, midY, nextLvl);
+                                    continue;
+                                }
                             }
+
 
                             // 不同等級 ➡️ 依質量（半徑平方）分配推開比例，大水果穩如泰山，小水果順勢滾開
                             let massA = a.radius * a.radius;
@@ -648,9 +663,11 @@
             
             setTimeout(() => {
                 if (!isFruitGameOver) {
+                    // 💡 測試用：把原本的 Math.floor(Math.random() * 3) 暫時改成 6（下一顆也是大西瓜）
+                    //nextFruitLevel = 6; 
                     nextFruitLevel = Math.floor(Math.random() * 3);
                     const r = FRUIT_LEVELS[nextFruitLevel].radius;
-                    currentDropX = Math.max(r + 10, Math.min(520 - r - 10, currentDropX));
+                    currentDropX = Math.max(r + 10, Math.min(480 - r - 10, currentDropX));
                     canDropFruit = true;
                 }
             }, 500);
@@ -837,7 +854,7 @@
                 if (e.key === 'ArrowLeft') {
                     currentDropX = Math.max(r + 10, currentDropX - moveStep);
                 } else if (e.key === 'ArrowRight') {
-                    currentDropX = Math.min(520 - r - 10, currentDropX + moveStep);
+                    currentDropX = Math.min(480 - r - 10, currentDropX + moveStep);
                 } else if (e.key === 'ArrowDown') {
                     dropCurrentFruit();
                 }
@@ -916,9 +933,17 @@
             let records = leaderboardData[dataKey] || [];
             
             
+            // 💡 依遊戲類型決定排行榜排序標準：
             records.sort((a, b) => {
-                if (a.time === b.time) return b.score - a.score;
-                return a.time - b.time;
+                if (gameKey === 'fruit') {
+                    // 【水果組合】：分數最高排第一！如果分數相同，則花費時間越短越前面
+                    if (b.score === a.score) return a.time - b.time;
+                    return b.score - a.score;
+                } else {
+                    // 【街市大冒險 & 迷宮】：正計時下時間越短（越快）排第一！如果時間相同，則分數越高越前面
+                    if (a.time === b.time) return b.score - a.score;
+                    return a.time - b.time;
+                }
             });
 
             const tbody = document.getElementById('leaderboard-tbody');
