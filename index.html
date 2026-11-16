@@ -182,15 +182,18 @@
             <div class="hud-box" id="score-box">分數：<span id="display-score">0</span></div>
         </div>
 
-        <div id="danger-countdown">⏳ 剩餘 <span id="step-timer">5</span> 秒</div>
+        <div id="danger-countdown">⏳ 剩餘 <span id="step-timer">3</span> 秒</div>
 
-        <div class="game-top-zone">
-            <div id="game-stage-title">第 1 關 (進度: 0 / 10)</div>
+        <div class="game-top-zone" style="display: flex; flex-direction: column; align-items: center; margin-top: 25px; z-index: 5;">
+            <div id="game-stage-title" style="background: rgba(255, 255, 255, 0.92); color: #222; padding: 10px 30px; border-radius: 15px; border: 3px solid #333; box-shadow: 0 4px 12px rgba(0,0,0,0.25); margin-bottom: 15px;">第 1 關 (進度: 0 / 10)</div>
             <div class="arrow-container" id="arrow-box"></div>
         </div>
 
+
         <div class="game-track">
-            <div class="character" id="player-char">🏃‍♂️</div>
+            <div class="character" id="player-char">
+                <img src="images/Char1.png" alt="婆婆角色" style="height: 150px; width: auto; image-rendering: pixelated; display: block;">
+            </div>
         </div>
 
         <!-- 💡 核心新增：客製化過關輸入名字小視窗（完全替代 prompt，大字體、絕不卡死） -->
@@ -206,29 +209,36 @@
         </div>
     </div>
 
-    <!-- ──────────────── PAGE 4: 遊戲進行畫面 (迷宮 Scratch / 原生水果組合) ──────────────── -->
-    <div id="page-game-scratch" class="page" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);">
-        <!-- 左上角 HUD 計時與計分板（水果組合專用） -->
-        <div class="hud-container" id="fruit-hud" style="display: none;">
-            <div class="hud-box" id="fruit-timer-box" style="font-size: 24px; padding: 8px 16px; font-weight: bold;">時間：<span id="fruit-time">00:00</span></div>
-            <div class="hud-box" id="fruit-score-box" style="font-size: 38px; padding: 12px 24px; font-weight: bold; color: #e65100;">分數：<span id="fruit-score">0</span></div>
+    <!-- ──────────────── PAGE 4: 純原生離線遊戲區 (迷宮 / 水果組合) ──────────────── -->
+    <div id="page-game-scratch" class="page" style="background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%); justify-content: flex-start; padding-top: 15px;">
+        
+        <!-- 左上角側邊控制欄：包含計時器、計分板、以及移過來的【提前結束返回】按鈕 -->
+        <div class="hud-container" id="fruit-hud" style="display: none; top: 20px; left: 20px;">
+            <div class="hud-box" id="fruit-timer-box" style="font-size: 24px; padding: 10px 18px; font-weight: bold;">時間：<span id="fruit-time">00:00</span></div>
+            <div class="hud-box" id="fruit-score-box" style="font-size: 36px; padding: 12px 20px; font-weight: bold; color: #e65100;">分數：<span id="fruit-score">0</span></div>
+            
+            <!-- 💡 依要求將【提前結束返回】按鈕移動到左方空白位置，釋放底部空間！ -->
+            <button class="back-home-btn" style="margin-top: 10px; padding: 12px 18px; font-size: 20px; background: #d84315; box-shadow: 0 4px 10px rgba(0,0,0,0.2);" onclick="exitScratchGame()">提前結束返回</button>
         </div>
 
-        <h2 id="scratch-title" style="margin-bottom: 15px;">遊戲中</h2>
+        <!-- 頂部標題與說明文字（現在有充足空間完整下移顯示！） -->
+        <h2 id="scratch-title" style="margin-top: 5px; margin-bottom: 6px; font-size: 32px;">遊戲中</h2>
         
-        <!-- 迷宮用的 Scratch 內嵌框 -->
-        <iframe id="scratch-frame" class="scratch-iframe" src="" allowtransparency="true" frameborder="0" scrolling="no" allowfullscreen></iframe>
+        <!-- 💡 精準校準版【街市迷宮大探險】容器 (780x585) -->
+        <div id="maze-game-wrapper" style="display: none; flex-direction: column; align-items: center;">
+            <p style="font-size: 19px; color: #444; margin-bottom: 10px; font-weight: bold;">⬆️ ⬇️ ⬅️ ➡️ 控制 👵 走出街市迷宮，抵達正上方 🌟 終點！</p>
+            <div id="maze-bg-box" style="width: 780px; height: 585px; background-image: url('images/maze_bg.png'); background-size: 100% 100%; position: relative; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.25);">
+                <!-- 💡 精準對齊背景圖黑色內框的座標與寬高 -->
+                <canvas id="maze-canvas" width="620" height="444" style="position: absolute; top: 76px; left: 80px; background: #ffffff;"></canvas>
+            </div>
+        </div>
         
-        <!-- 原生【水果組合】正方形物理箱子容器 -->
+        <!-- 純原生【巨無霸水果組合】正方形物理箱子容器 -->
         <div id="fruit-game-wrapper" style="display: none; flex-direction: column; align-items: center;">
-            <p style="font-size: 20px; color: #555; margin-bottom: 10px; font-weight: bold;">⬅️ ➡️ 移動位置 ｜ ⬇️ 放下水果（滿出紅線即結算）</p>
-            <div id="fruit-canvas-container" style="width: 520px; height: 520px; border: 8px solid #795548; border-top: none; border-radius: 0 0 20px 20px; background: rgba(255,255,255,0.85); box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;"></div>
+            <p style="font-size: 19px; color: #444; margin-bottom: 10px; font-weight: bold;">⬅️ ➡️ 移動位置 ｜ ⬇️ 放下水果（滿出紅線即結算）</p>
+            <div id="fruit-canvas-container" style="width: 480px; height: 480px; border: 8px solid #795548; border-top: none; border-radius: 0 0 20px 20px; background: rgba(255,255,255,0.85); box-shadow: 0 10px 25px rgba(0,0,0,0.2); position: relative;"></div>
         </div>
-
-        <button class="back-home-btn" style="margin-top: 20px; background: #d84315;" onclick="exitScratchGame()">提前結束並結算成績</button>
     </div>
-
-
 
     <!-- ──────────────── PAGE 5: 排行榜動態顯示頁 ──────────────── -->
     <div id="page-leaderboard" class="page">
@@ -275,6 +285,17 @@
 
     </div>
 
+    <!-- 💡 溫馨防沉迷休息提醒視窗（置於最外層，任何頁面時間到了都能直接彈出） -->
+    <div id="custom-rest-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.65); z-index: 999; justify-content: center; align-items: center; flex-direction: column;">
+        <div style="background: white; padding: 45px 40px; border-radius: 25px; text-align: center; box-shadow: 0 12px 35px rgba(0,0,0,0.35); border: 5px solid #0288d1; max-width: 580px; width: 90%;">
+            <h2 style="color: #0277bd; font-size: 42px; margin-bottom: 20px;">☕ 溫馨休息提醒</h2>
+            <p style="font-size: 32px; font-weight: bold; color: #333; line-height: 1.5; margin-bottom: 35px;">
+                已經遊玩了 3 分鐘囉！<br>請坐下來休息一下，保護膝蓋！
+            </p>
+            <button class="back-home-btn" style="background: #0288d1; font-size: 28px; padding: 15px 50px; margin: 0; border-radius: 15px;" onclick="closeRestModal()">確定</button>
+        </div>
+    </div>
+
         <script>
         // ──────────────── 1. 全域變數與資料設定 ────────────────
         let currentGame = '';       
@@ -317,14 +338,18 @@
         let leaderboardData = getLeaderboardFromStorage();
         let currentActiveTab = 'normal-1'; 
 
-        // 全域膝蓋防沉迷保護
+        // 全域膝蓋防沉迷保護（測試設定 180 秒 = 3 分鐘，改用超大字體自製視窗呈現）
         let globalPlayTime = 0;
         setInterval(() => {
             globalPlayTime++;
-            if (globalPlayTime === 180) {
-                alert("📢 溫馨提示：已經玩了 3 分鐘囉！請坐下來休息一下，保護膝蓋！");
+            if (globalPlayTime === 5) {
+                document.getElementById('custom-rest-modal').style.display = 'flex';
             }
         }, 1000);
+
+        function closeRestModal() {
+            document.getElementById('custom-rest-modal').style.display = 'none';
+        }
 
         // ──────────────── 2. 頁面路由與導覽邏輯 ────────────────
         function switchPage(pageId) {
@@ -377,7 +402,7 @@
             currentActiveTab = `normal-${stageIndex + 1}`; 
         }
 
-        // ──────────────── 3. 迷宮 (Scratch) 與 純原生離線水果組合 控制 ────────────────
+        // ──────────────── 3. 純原生離線【迷宮】 與 純原生離線【水果組合】 控制 ────────────────
         const SCRATCH_URLS = {
             'maze': 'https://mit.edu'
         };
@@ -399,41 +424,152 @@
         let canDropFruit = true;
         let isFruitGameOver = false;
 
+        // ──────────────── 3A. 細線版隨機迷宮生成與繪製引擎 ────────────────
+        const MAZE_ROWS = 13;   // 13 行高度，讓每格通道寬敞不擁擠
+        const MAZE_COLS = 17;  // 17 列寬度，確保正中央有精準的起點與終點 (第6列)
+        let mazeCells = [];
+        let playerMazePos = { r: 12, c: 8 }; // 起點：最下方正中央 (第12行, 第8列)
+        const goalMazePos = { r: 0, c: 8 };  // 終點：最上方正中央 (第0行, 第8列)
+
+
         function startScratchGame() {
             totalSeconds = 0;
             score = 0;
             switchPage('page-game-scratch');
 
-            if (currentGame === 'maze') {
-                document.getElementById('scratch-title').innerText = '🧭 迷宮大探險';
-                document.getElementById('scratch-frame').style.display = 'block';
-                document.getElementById('fruit-game-wrapper').style.display = 'none';
-                document.getElementById('fruit-hud').style.display = 'none';
-                document.getElementById('scratch-frame').src = SCRATCH_URLS['maze'] || '';
-                
-                score = 100;
-                clearInterval(gameInterval);
-                gameInterval = setInterval(() => { totalSeconds++; }, 1000);
-            } else if (currentGame === 'fruit') {
-                document.getElementById('scratch-title').innerText = '🍉 巨無霸水果組合';
-                document.getElementById('scratch-frame').style.display = 'none';
-                document.getElementById('fruit-game-wrapper').style.display = 'flex';
-                document.getElementById('fruit-hud').style.display = 'flex';
-                
-                document.getElementById('fruit-score').innerText = '0';
-                document.getElementById('fruit-time').innerText = '00:00';
+            document.getElementById('fruit-hud').style.display = 'flex';
+            document.getElementById('fruit-time').innerText = '00:00';
 
-                clearInterval(gameInterval);
-                gameInterval = setInterval(() => {
-                    totalSeconds++;
-                    let mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
-                    let secs = String(totalSeconds % 60).padStart(2, '0');
-                    document.getElementById('fruit-time').innerText = `${mins}:${secs}`;
-                }, 1000);
+            clearInterval(gameInterval);
+            gameInterval = setInterval(() => {
+                totalSeconds++;
+                let mins = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+                let secs = String(totalSeconds % 60).padStart(2, '0');
+                document.getElementById('fruit-time').innerText = `${mins}:${secs}`;
+            }, 1000);
+
+            if (currentGame === 'maze') {
+                // 【迷宮】啟動純原生隨機迷宮，隱藏分數框（純比拼時間）
+                document.getElementById('scratch-title').innerText = '🧭 街市迷宮大探險';
+                document.getElementById('maze-game-wrapper').style.display = 'flex';
+                document.getElementById('fruit-game-wrapper').style.display = 'none';
+                document.getElementById('fruit-score-box').style.display = 'none'; // 迷宮不需要分數
+                
+                initMazeGame();
+            } else if (currentGame === 'fruit') {
+                // 【水果組合】啟動物理引擎，顯示分數框
+                document.getElementById('scratch-title').innerText = '🍉 巨無霸水果組合';
+                document.getElementById('maze-game-wrapper').style.display = 'none';
+                document.getElementById('fruit-game-wrapper').style.display = 'flex';
+                document.getElementById('fruit-score-box').style.display = 'block';
+                document.getElementById('fruit-score').innerText = '0';
 
                 initFruitPhysicsGame();
             }
         }
+
+        function exitScratchGame() {
+            clearInterval(gameInterval);
+            if (fruitAnimId) cancelAnimationFrame(fruitAnimId);
+
+            // 如果是迷宮，結算視窗只顯示花費時間；如果是水果，顯示分數與時間
+            if (currentGame === 'maze') {
+                document.getElementById('modal-game-stats').innerText = `總花費時間：${totalSeconds} 秒`;
+            } else {
+                document.getElementById('modal-game-stats').innerText = `最終分數：${score} 分 | 總花費時間：${totalSeconds} 秒`;
+            }
+
+            document.getElementById('senior-name-input').value = '';
+            document.getElementById('custom-win-modal').style.display = 'flex';
+            
+            document.getElementById('page-game-scratch').appendChild(document.getElementById('custom-win-modal'));
+            setTimeout(() => { document.getElementById('senior-name-input').focus(); }, 100);
+        }
+
+        // ──────────────── 3B. 純原生隨機迷宮生成與繪製引擎 ────────────────
+        function initMazeGame() {
+            // 1. 建立網格，每個格子預設擁有「上、右、下、左」四面細牆
+            mazeCells = Array.from({ length: MAZE_ROWS }, () =>
+                Array.from({ length: MAZE_COLS }, () => ({
+                    top: true, right: true, bottom: true, left: true, visited: false
+                }))
+            );
+
+            // 2. 深度優先搜尋 (DFS) 隨機打通相鄰格子的細牆，生成唯一通路與死路
+            function carveThinMaze(r, c) {
+                mazeCells[r][c].visited = true;
+                const dirs = [
+                    { dr: -1, dc: 0, wall: 'top', opp: 'bottom' },
+                    { dr: 1, dc: 0, wall: 'bottom', opp: 'top' },
+                    { dr: 0, dc: -1, wall: 'left', opp: 'right' },
+                    { dr: 0, dc: 1, wall: 'right', opp: 'left' }
+                ];
+                dirs.sort(() => Math.random() - 0.5);
+
+                for (let d of dirs) {
+                    let nr = r + d.dr;
+                    let nc = c + d.dc;
+                    if (nr >= 0 && nr < MAZE_ROWS && nc >= 0 && nc < MAZE_COLS && !mazeCells[nr][nc].visited) {
+                        mazeCells[r][c][d.wall] = false;     // 拆掉當前格子的牆
+                        mazeCells[nr][nc][d.opp] = false;    // 拆掉相鄰格子的對應牆
+                        carveThinMaze(nr, nc);
+                    }
+                }
+            }
+
+            carveThinMaze(12, 8);
+            playerMazePos = { r: 12, c: 8 };
+            drawMazeCanvas();
+        }
+
+        function drawMazeCanvas() {
+            const canvas = document.getElementById('maze-canvas');
+            const ctx = canvas.getContext('2d');
+            const pad = 0.5; // 留出 4px 邊距，確保外框細線完整顯示不被裁切
+            const cellW = (canvas.width - pad * 2) / MAZE_COLS;
+            const cellH = (canvas.height - pad * 2) / MAZE_ROWS;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 1. 畫純白底色
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 繪製最底下一整排的淺米色起點區底紋（還原你圖片底部的溫馨設計）
+            ctx.fillStyle = '#ffefd5';
+            ctx.fillRect(pad, pad + (MAZE_ROWS - 1) * cellH, canvas.width - pad * 2, cellH);
+
+            // 3. 繪製細線牆壁（風格完全對齊你的參考圖）
+            ctx.strokeStyle = '#4e342e';
+            ctx.lineWidth = 2.8; // 精緻清晰的細線厚度
+            ctx.lineCap = 'square';
+
+            ctx.beginPath();
+            for (let r = 0; r < MAZE_ROWS; r++) {
+                for (let c = 0; c < MAZE_COLS; c++) {
+                    let x = pad + c * cellW;
+                    let y = pad + r * cellH;
+                    let cell = mazeCells[r][c];
+
+                    if (cell.top) { ctx.moveTo(x, y); ctx.lineTo(x + cellW, y); }
+                    if (cell.right) { ctx.moveTo(x + cellW, y); ctx.lineTo(x + cellW, y + cellH); }
+                    if (cell.bottom) { ctx.moveTo(x, y + cellH); ctx.lineTo(x + cellW, y + cellH); }
+                    if (cell.left) { ctx.moveTo(x, y); ctx.lineTo(x, y + cellH); }
+                }
+            }
+            ctx.stroke();
+
+            // 4. 繪製正上方中央終點星星 (🌟)
+            ctx.font = `${Math.min(cellW, cellH) * 0.72}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🌟', pad + (goalMazePos.c + 0.5) * cellW, pad + (goalMazePos.r + 0.5) * cellH);
+
+            // 5. 繪製玩家操控的婆婆 (👵)
+            ctx.font = `${Math.min(cellW, cellH) * 0.78}px Arial`;
+            ctx.fillText('👵', pad + (playerMazePos.c + 0.5) * cellW, pad + (playerMazePos.r + 0.5) * cellH);
+        }
+
 
         function initFruitPhysicsGame() {
             const container = document.getElementById('fruit-canvas-container');
@@ -687,6 +823,20 @@
 
 
         // ──────────────── 4. 街市大冒險 核心邏輯 ────────────────
+        // 💡 街市過場背景清單（目前先用鮮明漸層色代替，未來有街市圖片時，只要把下面註解打開並填入檔名即可！）
+        const MARKET_BACKGROUNDS = [
+            /*'linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%)', // 場景 1（如：街市入口）
+            'linear-gradient(135deg, #f6d365 0%, #fda085 100%)', // 場景 2（如：蔬菜檔口）
+            'linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%)', // 場景 3（如：鮮魚海鮮檔）
+            'linear-gradient(135deg, #fccb90 0%, #d57eeb 100%)'  // 場景 4（如：水果攤檔）*/
+            
+            // 📸 未來有街市圖片時，請把上面 4 行刪掉，改用下面這 4 行（記得把圖片放進 images/ 資料夾）：
+             "url('images/market_bg1.jpeg') center/cover no-repeat",
+             "url('images/market_bg2.jpeg') center/cover no-repeat",
+             "url('images/market_bg3.jpeg') center/cover no-repeat",
+             "url('images/market_bg4.jpeg') center/cover no-repeat"
+        ];
+
         function startGame() {
             if (currentGame !== 'market') {
                 startScratchGame();
@@ -708,6 +858,9 @@
                 document.getElementById('display-time').innerText = `${mins}:${secs}`;
             }, 1000);
 
+            // 每次新遊戲開始時，先重置回第 1 個街市場景背景
+            document.getElementById('page-game-market').style.background = MARKET_BACKGROUNDS[0];
+
             switchPage('page-game-market');
             initMarketStage();
         }
@@ -722,8 +875,28 @@
             let modeTitle = (marketMode === 'hard') ? '困難模式' : `第 ${currentStage + 1} 關`;
             document.getElementById('game-stage-title').innerText = `${modeTitle} (進度: ${currentStep} / ${maxSteps})`;
             
-            let progress = currentStep / maxSteps;
-            document.getElementById('player-char').style.left = `${5 + (progress * 85)}%`;
+            // 💡 核心邏輯：用「除以 4 的餘數」實現「前進 3 下到最右，第 4 下重置回最左並換背景」
+            let visualStep = currentStep % 4; // 數值只會在 0, 1, 2, 3 之間循環
+            let sceneIndex = Math.floor(currentStep / 4); // 每走完 4 步，場景編號 +1
+
+            // 1. 對應 4 個視覺位置（0=最左, 1=左中, 2=右中, 3=最右）
+            const positions = ['5%', '33%', '61%', '88%'];
+            const playerChar = document.getElementById('player-char');
+
+            if (visualStep === 0 && currentStep > 0) {
+                // 剛觸發過場重置回最左邊時：暫時關閉滑動過渡動畫，讓角色「瞬間」出現在新場景的最左方，避免角色倒退飛回去的穿幫畫面！
+                playerChar.style.transition = 'none';
+                playerChar.style.left = positions[0];
+                // 強制瀏覽器重繪後，恢復原本的平滑移動動畫
+                void playerChar.offsetWidth; 
+                playerChar.style.transition = 'left 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.2)';
+            } else {
+                playerChar.style.left = positions[visualStep];
+            }
+
+            // 2. 根據場景編號自動切換背景，營造過場感
+            const marketPage = document.getElementById('page-game-market');
+            marketPage.style.background = MARKET_BACKGROUNDS[sceneIndex % MARKET_BACKGROUNDS.length];
         }
 
         function generateSequence() {
@@ -783,7 +956,7 @@
 
         function startStepTimer() {
             clearInterval(stepTimerInterval);
-            stepSecondsLeft = 5;
+            stepSecondsLeft = 3;   // 💡 把 5 改成你想要的秒數（例如 3 或 8）
             document.getElementById('danger-countdown').style.display = 'block';
             document.getElementById('step-timer').innerText = stepSecondsLeft;
 
@@ -815,6 +988,8 @@
                 
                 // 如果目前過關小視窗開著，就禁止鍵盤再操控遊戲
                 if(document.getElementById('custom-win-modal').style.display === 'flex') return;
+                // 如果目前休息提醒視窗開著，也禁止鍵盤再操控遊戲
+                if(document.getElementById('custom-rest-modal').style.display === 'flex') return;
                 
                 e.preventDefault();
 
@@ -859,6 +1034,38 @@
                     dropCurrentFruit();
                 }
             }
+
+            // 3. 迷宮按鍵監聽（上下左右移動 👵，抵達終點自動過關彈窗）&（檢查細線牆壁阻擋，抵達正上方 🌟 自動結算）
+            if (document.getElementById('page-game-scratch').classList.contains('active-page') && currentGame === 'maze') {
+                if (!['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) return;
+                e.preventDefault();
+
+                let r = playerMazePos.r;
+                let c = playerMazePos.c;
+                let currentCell = mazeCells[r][c];
+
+                // 檢查該方向是否沒有細牆阻擋，且沒有超出邊界
+                if (e.key === 'ArrowUp' && !currentCell.top && r > 0) {
+                    playerMazePos.r--;
+                } else if (e.key === 'ArrowDown' && !currentCell.bottom && r < MAZE_ROWS - 1) {
+                    playerMazePos.r++;
+                } else if (e.key === 'ArrowLeft' && !currentCell.left && c > 0) {
+                    playerMazePos.c--;
+                } else if (e.key === 'ArrowRight' && !currentCell.right && c < MAZE_COLS - 1) {
+                    playerMazePos.c++;
+                } else {
+                    return; // 撞到細牆就不移動
+                }
+
+                drawMazeCanvas();
+
+                // 抵達正上方中央終點 🌟，立刻停止計時並彈出名字登錄框
+                if (playerMazePos.r === goalMazePos.r && playerMazePos.c === goalMazePos.c) {
+                    clearInterval(gameInterval);
+                    setTimeout(exitScratchGame, 200);
+                }
+            }
+
         });
 
         // 💡 修正關鍵流程：走到指定步數，直接彈出我們自製的 HTML 視窗，絕對不卡死！
